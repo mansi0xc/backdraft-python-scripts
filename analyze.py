@@ -57,12 +57,19 @@ def pool_series(label, block_times):
     if df.empty:
         return None
 
+    # v3 `liquidity` is uint128 and routinely exceeds int64 max (9.2e18), so
+    # pandas parses it as Python objects. numpy can't do arithmetic on those.
+    # Cast to float — we only use liquidity as a relative weight, so losing
+    # precision beyond 15 significant digits is irrelevant.
+    df["liquidity"] = pd.to_numeric(df["liquidity"], errors="coerce").astype(float)
+    df["tick"] = pd.to_numeric(df["tick"], errors="coerce").astype(float)
+
     # last swap in each block wins
     last = df.groupby("block").last().reset_index()[["block", "tick", "liquidity"]]
 
     s = block_times.merge(last, on="block", how="left")
-    s["tick"] = s["tick"].ffill().bfill()
-    s["liquidity"] = s["liquidity"].ffill().bfill()
+    s["tick"] = s["tick"].ffill().bfill().astype(float)
+    s["liquidity"] = s["liquidity"].ffill().bfill().astype(float)
     s = s.rename(columns={"tick": f"tick_{label}", "liquidity": f"liq_{label}"})
     return s[["block", "timestamp", f"tick_{label}", f"liq_{label}"]]
 
@@ -163,8 +170,19 @@ def main():
     ts = frame["timestamp"].to_numpy()
     tick_cols = [f"tick_{l}" for l in labels]
     liq_cols  = [f"liq_{l}"  for l in labels]
-    ticks_all = frame[tick_cols].to_numpy()
-    liq_all   = frame[liq_cols].to_numpy()
+    ticks_all = frame[tick_cols].to_numpy(dtype=float)
+    liq_all   = frame[liq_cols].to_numpy(dtype=float)
+
+    # drop any source that never reported liquidity — it can't be weighted
+    usable = ~np.all(np.isnan(liq_all), axis=0)
+    if not usable.all():
+        dropped = [l for l, u in zip(labels, usable) if not u]
+        print(f"dropping sources with no liquidity data: {dropped}")
+        labels = [l for l, u in zip(labels, usable) if u]
+        ticks_all = ticks_all[:, usable]
+        liq_all = liq_all[:, usable]
+        if not labels:
+            raise SystemExit("No usable sources.")
 
     # ---- candidate methods, each producing a tick estimate per block
     methods = {}
