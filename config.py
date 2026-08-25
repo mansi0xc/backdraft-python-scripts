@@ -29,9 +29,10 @@ END_BLOCK   = int(os.environ.get("END_BLOCK",   21_507_200))
 # `label` is what shows up in the output table.
 
 POOLS = [
-    {"label": "v3_005", "address": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640", "fee_bps": 5},
-    {"label": "v3_030", "address": "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8", "fee_bps": 30},
-    {"label": "v3_100", "address": "0x7BeA39867e4169DBe237d55C8242a8f2fcDcc387", "fee_bps": 100},
+    {"label": "v3_001", "address": "0xe0554a476a092703abdb3ef35c80e0d76d32939f", "fee_bps": 1},
+    {"label": "v3_005", "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", "fee_bps": 5},
+    {"label": "v3_030", "address": "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8", "fee_bps": 30},
+    {"label": "v3_100", "address": "0x7bea39867e4169dbe237d55c8242a8f2fcdcc387", "fee_bps": 100},
 ]
 
 # Which pool plays the role of "our v4 pool" for the own-EMA baseline.

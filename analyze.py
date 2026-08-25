@@ -46,6 +46,10 @@ def price_to_tick(price):
 
 # ------------------------------------------------------------------ series building
 
+def _tag() -> str:
+    return f"{C.START_BLOCK}_{C.END_BLOCK}"
+
+
 def pool_series(label, block_times):
     """
     Per-block tick and liquidity for one pool, forward-filled between swaps.
@@ -53,7 +57,7 @@ def pool_series(label, block_times):
     A pool's price only changes when someone swaps, so the last swap's tick
     is the pool's price until the next one. Forward-fill is exactly right here.
     """
-    df = pd.read_csv(os.path.join(C.DATA_DIR, f"swaps_{label}.csv"))
+    df = pd.read_csv(os.path.join(C.DATA_DIR, f"swaps_{label}_{_tag()}.csv"))
     if df.empty:
         return None
 
@@ -141,7 +145,7 @@ def ema_series(ticks, alpha_bps, flow_rate=1.0, seed=0):
 def main():
     os.makedirs(C.OUT_DIR, exist_ok=True)
 
-    block_times = pd.read_csv(os.path.join(C.DATA_DIR, "block_times.csv"))
+    block_times = pd.read_csv(os.path.join(C.DATA_DIR, f"block_times_{_tag()}.csv"))
 
     # ---- assemble per-pool series
     frame = block_times.copy()
@@ -158,7 +162,7 @@ def main():
         raise SystemExit("No pool data. Run fetch.py first.")
 
     # ---- ground truth: Binance, forward-filled onto blocks
-    binance = pd.read_csv(os.path.join(C.DATA_DIR, "binance.csv")).sort_values("timestamp")
+    binance = pd.read_csv(os.path.join(C.DATA_DIR, f"binance_{_tag()}.csv")).sort_values("timestamp")
     frame = pd.merge_asof(
         frame.sort_values("timestamp"),
         binance[["timestamp", "close"]].rename(columns={"close": "cex_price"}),
@@ -252,7 +256,7 @@ def main():
         })
 
     res = pd.DataFrame(results).sort_values("mean_err_bps").reset_index(drop=True)
-    res.to_csv(os.path.join(C.OUT_DIR, "results.csv"), index=False)
+    res.to_csv(os.path.join(C.OUT_DIR, f"results_{_tag()}.csv"), index=False)
 
     # ---- markdown table for the README
     md = ["| Method | Mean err (bps) | Median | p95 | Max | Lag (blocks) | Coverage |",
@@ -265,7 +269,7 @@ def main():
               f"(threshold {C.GUARD_MAX_DEV_TICKS} ticks)")
     md.append(f"Window: blocks {frame.block.min()}–{frame.block.max()}, "
               f"{len(frame)} blocks, {C.BINANCE_SYMBOL} as ground truth")
-    open(os.path.join(C.OUT_DIR, "error_table.md"), "w").write("\n".join(md))
+    open(os.path.join(C.OUT_DIR, f"error_table_{_tag()}.md"), "w").write("\n".join(md))
 
     print("\n".join(md))
 
@@ -278,7 +282,7 @@ def main():
     ax.set_xlabel("unix time"); ax.set_ylabel("USDC per ETH")
     ax.set_title("Reference price methods vs Binance")
     ax.legend(); ax.grid(alpha=0.3)
-    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, "tracking.png"), dpi=140)
+    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, f"tracking_{_tag()}.png"), dpi=140)
 
     # ---- chart 2: error distribution
     fig, ax = plt.subplots(figsize=(11, 6))
@@ -291,7 +295,7 @@ def main():
     ax.set_title("Error distribution by method")
     ax.set_xlim(0, np.nanpercentile(np.abs(methods["composite_median"] - cex_tick), 99))
     ax.legend(); ax.grid(alpha=0.3)
-    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, "error_hist.png"), dpi=140)
+    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, f"error_hist_{_tag()}.png"), dpi=140)
 
     # ---- source-set ablation: does each extra pool earn its gas?
     #
@@ -324,7 +328,7 @@ def main():
             })
 
     ab = pd.DataFrame(abl).sort_values(["n_sources", "mean_err_bps"])
-    ab.to_csv(os.path.join(C.OUT_DIR, "source_ablation.csv"), index=False)
+    ab.to_csv(os.path.join(C.OUT_DIR, f"source_ablation_{_tag()}.csv"), index=False)
 
     best1 = ab[ab.n_sources == 1].mean_err_bps.min()
     bestn = ab.mean_err_bps.min()
@@ -347,7 +351,7 @@ def main():
                       "mean_err_bps": float(np.nanmean(e)),
                       "p95_err_bps": float(np.nanpercentile(e, 95))})
     sw = pd.DataFrame(sweep)
-    sw.to_csv(os.path.join(C.OUT_DIR, "twap_window_sweep.csv"), index=False)
+    sw.to_csv(os.path.join(C.OUT_DIR, f"twap_window_sweep_{_tag()}.csv"), index=False)
 
     fig, ax = plt.subplots(figsize=(9, 5.5))
     ax.plot(sw.window_s, sw.mean_err_bps, "o-", label="mean error")
@@ -356,10 +360,9 @@ def main():
     ax.set_xlabel("TWAP window (seconds)"); ax.set_ylabel("error vs Binance (bps)")
     ax.set_title("TWAP window length vs accuracy")
     ax.legend(); ax.grid(alpha=0.3)
-    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, "twap_sweep.png"), dpi=140)
+    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, f"twap_sweep_{_tag()}.png"), dpi=140)
 
-    print(f"\nWrote {C.OUT_DIR}/results.csv, error_table.md, "
-          f"tracking.png, error_hist.png, twap_sweep.png")
+    print(f"\nWrote {C.OUT_DIR}/*_{_tag()}.{{csv,md,png}}")
 
 
 if __name__ == "__main__":

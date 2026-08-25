@@ -1,7 +1,7 @@
 """
 Pull the raw data: Uniswap v3 Swap events + Binance klines.
 
-    export RPC_URL=https://eth-mainnet.g.alchemy.com/v2/ouigpC_utbObH4NDiyunfv1nOUt8qQv8
+    export RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
     python fetch.py
 
 Writes data/swaps_<label>.csv and data/binance.csv.
@@ -80,9 +80,15 @@ def block_timestamp(block_number: int) -> int:
 
 # ------------------------------------------------------------------ pools
 
+def _tag() -> str:
+    """Cache key. Without the block range in the filename, changing dates and
+    re-running would silently reuse the previous window's data."""
+    return f"{C.START_BLOCK}_{C.END_BLOCK}"
+
+
 def fetch_pool(pool: dict) -> pd.DataFrame:
     label = pool["label"]
-    path = os.path.join(C.DATA_DIR, f"swaps_{label}.csv")
+    path = os.path.join(C.DATA_DIR, f"swaps_{label}_{_tag()}.csv")
     if os.path.exists(path):
         print(f"  {label}: cached -> {path}")
         return pd.read_csv(path)
@@ -138,7 +144,7 @@ def build_block_times() -> pd.DataFrame:
     interpolate. Post-merge slots are a fixed 12s, so drift over a day is
     seconds — irrelevant when joining to 1-minute klines.
     """
-    path = os.path.join(C.DATA_DIR, "block_times.csv")
+    path = os.path.join(C.DATA_DIR, f"block_times_{_tag()}.csv")
     if os.path.exists(path):
         return pd.read_csv(path)
 
@@ -162,7 +168,7 @@ def build_block_times() -> pd.DataFrame:
 # ------------------------------------------------------------------ binance
 
 def fetch_binance(start_ts: int, end_ts: int) -> pd.DataFrame:
-    path = os.path.join(C.DATA_DIR, "binance.csv")
+    path = os.path.join(C.DATA_DIR, f"binance_{_tag()}.csv")
     if os.path.exists(path):
         print(f"  binance: cached -> {path}")
         return pd.read_csv(path)
