@@ -47,7 +47,16 @@ def price_to_tick(price):
 # ------------------------------------------------------------------ series building
 
 def _tag() -> str:
+    """Chain data: swaps and block times. Independent of ground truth."""
     return f"{C.START_BLOCK}_{C.END_BLOCK}"
+
+
+def _truth() -> str:
+    """Ground truth and outputs: depends on which venue/interval we score against."""
+    suffix = ""
+    if C.BINANCE_SYMBOL != "ETHUSDC" or C.BINANCE_INTERVAL != "1m":
+        suffix = f"_{C.BINANCE_SYMBOL}_{C.BINANCE_INTERVAL}"
+    return f"{C.START_BLOCK}_{C.END_BLOCK}{suffix}"
 
 
 def pool_series(label, block_times):
@@ -162,7 +171,7 @@ def main():
         raise SystemExit("No pool data. Run fetch.py first.")
 
     # ---- ground truth: Binance, forward-filled onto blocks
-    binance = pd.read_csv(os.path.join(C.DATA_DIR, f"binance_{_tag()}.csv")).sort_values("timestamp")
+    binance = pd.read_csv(os.path.join(C.DATA_DIR, f"binance_{_tag()}_{C.BINANCE_SYMBOL}_{C.BINANCE_INTERVAL}.csv")).sort_values("timestamp")
     frame = pd.merge_asof(
         frame.sort_values("timestamp"),
         binance[["timestamp", "close"]].rename(columns={"close": "cex_price"}),
@@ -256,7 +265,7 @@ def main():
         })
 
     res = pd.DataFrame(results).sort_values("mean_err_bps").reset_index(drop=True)
-    res.to_csv(os.path.join(C.OUT_DIR, f"results_{_tag()}.csv"), index=False)
+    res.to_csv(os.path.join(C.OUT_DIR, f"results_{_truth()}.csv"), index=False)
 
     # ---- markdown table for the README
     md = ["| Method | Mean err (bps) | Median | p95 | Max | Lag (blocks) | Coverage |",
@@ -268,8 +277,8 @@ def main():
     md.append(f"Guard freeze rate: {freeze_rate*100:.2f}% of blocks "
               f"(threshold {C.GUARD_MAX_DEV_TICKS} ticks)")
     md.append(f"Window: blocks {frame.block.min()}–{frame.block.max()}, "
-              f"{len(frame)} blocks, {C.BINANCE_SYMBOL} as ground truth")
-    open(os.path.join(C.OUT_DIR, f"error_table_{_tag()}.md"), "w").write("\n".join(md))
+              f"{len(frame)} blocks, {C.BINANCE_SYMBOL} {C.BINANCE_INTERVAL} as ground truth")
+    open(os.path.join(C.OUT_DIR, f"error_table_{_truth()}.md"), "w").write("\n".join(md))
 
     print("\n".join(md))
 
@@ -282,7 +291,7 @@ def main():
     ax.set_xlabel("unix time"); ax.set_ylabel("USDC per ETH")
     ax.set_title("Reference price methods vs Binance")
     ax.legend(); ax.grid(alpha=0.3)
-    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, f"tracking_{_tag()}.png"), dpi=140)
+    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, f"tracking_{_truth()}.png"), dpi=140)
 
     # ---- chart 2: error distribution
     fig, ax = plt.subplots(figsize=(11, 6))
@@ -295,7 +304,7 @@ def main():
     ax.set_title("Error distribution by method")
     ax.set_xlim(0, np.nanpercentile(np.abs(methods["composite_median"] - cex_tick), 99))
     ax.legend(); ax.grid(alpha=0.3)
-    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, f"error_hist_{_tag()}.png"), dpi=140)
+    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, f"error_hist_{_truth()}.png"), dpi=140)
 
     # ---- source-set ablation: does each extra pool earn its gas?
     #
@@ -328,7 +337,7 @@ def main():
             })
 
     ab = pd.DataFrame(abl).sort_values(["n_sources", "mean_err_bps"])
-    ab.to_csv(os.path.join(C.OUT_DIR, f"source_ablation_{_tag()}.csv"), index=False)
+    ab.to_csv(os.path.join(C.OUT_DIR, f"source_ablation_{_truth()}.csv"), index=False)
 
     best1 = ab[ab.n_sources == 1].mean_err_bps.min()
     bestn = ab.mean_err_bps.min()
@@ -351,7 +360,7 @@ def main():
                       "mean_err_bps": float(np.nanmean(e)),
                       "p95_err_bps": float(np.nanpercentile(e, 95))})
     sw = pd.DataFrame(sweep)
-    sw.to_csv(os.path.join(C.OUT_DIR, f"twap_window_sweep_{_tag()}.csv"), index=False)
+    sw.to_csv(os.path.join(C.OUT_DIR, f"twap_window_sweep_{_truth()}.csv"), index=False)
 
     fig, ax = plt.subplots(figsize=(9, 5.5))
     ax.plot(sw.window_s, sw.mean_err_bps, "o-", label="mean error")
@@ -360,9 +369,9 @@ def main():
     ax.set_xlabel("TWAP window (seconds)"); ax.set_ylabel("error vs Binance (bps)")
     ax.set_title("TWAP window length vs accuracy")
     ax.legend(); ax.grid(alpha=0.3)
-    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, f"twap_sweep_{_tag()}.png"), dpi=140)
+    fig.tight_layout(); fig.savefig(os.path.join(C.OUT_DIR, f"twap_sweep_{_truth()}.png"), dpi=140)
 
-    print(f"\nWrote {C.OUT_DIR}/*_{_tag()}.{{csv,md,png}}")
+    print(f"\nWrote {C.OUT_DIR}/*_{_truth()}.{{csv,md,png}}")
 
 
 if __name__ == "__main__":

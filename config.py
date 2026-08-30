@@ -61,16 +61,31 @@ SWAP_TOPIC0 = "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca6
 # ---------------------------------------------------------------- Ground truth
 
 BINANCE_SYMBOL   = os.environ.get("BINANCE_SYMBOL", "ETHUSDC")   # ETHUSDT if USDC pair is thin
-BINANCE_INTERVAL = "1m"
+BINANCE_INTERVAL = os.environ.get("BINANCE_INTERVAL", "1m")      # "1s" for block-resolution truth
 BINANCE_BASE     = "https://api.binance.com/api/v3/klines"
 
 # ---------------------------------------------------------------- Methods under test
 
 EMA_ALPHA_BPS = 200          # own-pool EMA damping, 200 = 2% per block with a swap
 TWAP_WINDOWS  = [300, 1800]  # seconds: 5 min, 30 min
-GUARD_MAX_DEV_TICKS = 50     # freeze if |composite_spot - composite_twap| exceeds this
+GUARD_MAX_DEV_TICKS = int(os.environ.get("GUARD_MAX_DEV_TICKS", 50))
+                             # freeze if |composite_spot - composite_twap| exceeds this
 
 # ---------------------------------------------------------------- Output
 
 DATA_DIR = "data"
 OUT_DIR  = "out"
+
+
+# ---------------------------------------------------------------- guard rail
+#
+# Silently ignoring a mistyped override wastes a whole run. Anything that looks
+# like a setting for this tool but isn't one gets flagged at import.
+
+_KNOWN = {"RPC_URL", "START_BLOCK", "END_BLOCK",
+          "BINANCE_SYMBOL", "BINANCE_INTERVAL", "GUARD_MAX_DEV_TICKS"}
+_SUSPECT = {k for k in os.environ
+            if (k.isupper() and ("BINANCE" in k or "BLOCK" in k or "RPC" in k
+                                 or "GUARD" in k or "TWAP" in k or "EMA" in k))}
+for _k in sorted(_SUSPECT - _KNOWN):
+    print(f"  !! {_k} is set but this tool does not read it — check the spelling")

@@ -83,7 +83,8 @@ def block_timestamp(block_number: int) -> int:
 def _tag() -> str:
     """Cache key. Without the block range in the filename, changing dates and
     re-running would silently reuse the previous window's data."""
-    return f"{C.START_BLOCK}_{C.END_BLOCK}"
+    base = f"{C.START_BLOCK}_{C.END_BLOCK}"
+    return base
 
 
 def fetch_pool(pool: dict) -> pd.DataFrame:
@@ -168,7 +169,7 @@ def build_block_times() -> pd.DataFrame:
 # ------------------------------------------------------------------ binance
 
 def fetch_binance(start_ts: int, end_ts: int) -> pd.DataFrame:
-    path = os.path.join(C.DATA_DIR, f"binance_{_tag()}.csv")
+    path = os.path.join(C.DATA_DIR, f"binance_{_tag()}_{C.BINANCE_SYMBOL}_{C.BINANCE_INTERVAL}.csv")
     if os.path.exists(path):
         print(f"  binance: cached -> {path}")
         return pd.read_csv(path)
@@ -176,6 +177,10 @@ def fetch_binance(start_ts: int, end_ts: int) -> pd.DataFrame:
     rows = []
     cur = start_ts * 1000
     end_ms = end_ts * 1000
+
+    # pagination step must match the interval, not assume 1m
+    step_ms = {"1s": 1_000, "1m": 60_000, "3m": 180_000,
+               "5m": 300_000, "15m": 900_000}.get(C.BINANCE_INTERVAL, 60_000)
 
     while cur < end_ms:
         r = requests.get(C.BINANCE_BASE, params={
@@ -197,9 +202,10 @@ def fetch_binance(start_ts: int, end_ts: int) -> pd.DataFrame:
                 "low":   float(k[3]),
                 "close": float(k[4]),
             })
-        cur = batch[-1][0] + 60_000
-        print(f"  binance: {len(rows)} candles")
-        time.sleep(0.2)
+        cur = batch[-1][0] + step_ms
+        if len(rows) % 20000 < 1000:
+            print(f"  binance: {len(rows)} candles")
+        time.sleep(0.15)
 
     df = pd.DataFrame(rows).drop_duplicates("timestamp").sort_values("timestamp")
     os.makedirs(C.DATA_DIR, exist_ok=True)
