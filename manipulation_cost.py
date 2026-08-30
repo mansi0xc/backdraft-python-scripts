@@ -132,6 +132,28 @@ def ticks_needed_to_mask(gap_ticks: int) -> int:
     return max(0, gap_ticks - GAP_THRESHOLD_TICKS + 1)
 
 
+def rate_at_gap(gap_ticks: int) -> float:
+    """Surcharge rate as a fraction, matching SurchargeMath after task 9."""
+    return min(gap_ticks * CAPTURE_RATE_BPS / 1e8, SURCHARGE_CAP_BPS / 1e4)
+
+
+def prize_rate(gap_ticks: int, ticks_pushed: int) -> float:
+    """
+    Fraction of notional the attacker avoids paying.
+
+    Full mask  -> the gap never opens, so the WHOLE surcharge is avoided.
+    Partial    -> the gap still opens, but on a smaller maxAbsGap, so only the
+                  difference is avoided. This is the case the first version of this
+                  script got wrong: it credited the attacker with the full surcharge
+                  even when the mask was too small to hide the gap, which overstated
+                  the attack's profitability on every gap above 113 ticks.
+    """
+    if ticks_pushed >= ticks_needed_to_mask(gap_ticks):
+        return rate_at_gap(gap_ticks)
+    apparent = gap_ticks - ticks_pushed
+    return max(0.0, rate_at_gap(gap_ticks) - rate_at_gap(apparent))
+
+
 def analyse(liquidity, tick, gap_ticks, gas_price_gwei):
     eth_price = eth_price_from_tick(tick)
     need = ticks_needed_to_mask(gap_ticks)
@@ -142,7 +164,7 @@ def analyse(liquidity, tick, gap_ticks, gas_price_gwei):
     cost = attack_cost_usd(liquidity, tick, push, gas_price_gwei, eth_price)
 
     # Break-even arb notional: the trade size at which the avoided surcharge covers cost.
-    rate = min(gap_ticks * CAPTURE_RATE_BPS / 1e8, SURCHARGE_CAP_BPS / 1e4)
+    rate = prize_rate(gap_ticks, push)
     breakeven = cost["total_usd"] / rate if rate > 0 else float("inf")
 
     return {
@@ -152,7 +174,8 @@ def analyse(liquidity, tick, gap_ticks, gas_price_gwei):
         "feasible": feasible,
         "ticks_pushed": push,
         **cost,
-        "surcharge_rate_bps": rate * 10_000,
+        "surcharge_rate_bps": rate_at_gap(gap_ticks) * 10_000,
+        "avoided_bps": rate * 10_000,
         "breakeven_arb_usd": breakeven,
     }
 
@@ -222,26 +245,27 @@ def report(liquidity, tick, gas_price_gwei, label):
     print(f"  tick = {tick:,.0f}   ETH ≈ ${eth_price_from_tick(tick):,.2f}")
     print(f"  gas = {gas_price_gwei} gwei")
     print(f"{'=' * 78}")
-    print(f"{'gap':>5} {'push':>5} {'feas':>5} {'push notional':>16} "
-          f"{'fees':>10} {'gas':>8} {'COST':>11} {'rate':>7} {'break-even arb':>16}")
-    print("-" * 78)
+    print(f"{'gap':>5} {'push':>5} {'mask':>6} {'push notional':>15} "
+          f"{'COST':>9} {'rate':>7} {'avoided':>8} {'break-even arb':>16}")
+    print("-" * 82)
 
     for gap in (66, 80, 100, 114, 150, 200, 400):
         a = analyse(liquidity, tick, gap, gas_price_gwei)
         print(f"{a['gap_ticks']:>5} {a['ticks_pushed']:>5} "
-              f"{'yes' if a['feasible'] else 'NO':>5} "
-              f"${a['push_notional_usd']:>15,.0f} "
-              f"${a['fee_usd']:>9,.0f} ${a['gas_usd']:>7,.0f} "
-              f"${a['total_usd']:>10,.0f} "
-              f"{a['surcharge_rate_bps']:>6.1f} "
+              f"{'full' if a['feasible'] else 'partial':>6} "
+              f"${a['push_notional_usd']:>14,.0f} "
+              f"${a['total_usd']:>8,.0f} "
+              f"{a['surcharge_rate_bps']:>6.2f} "
+              f"{a['avoided_bps']:>7.2f} "
               f"${a['breakeven_arb_usd']:>15,.0f}")
 
-    print("-" * 78)
-    print("feas = the mask needs <= 49 ticks, so the guard never fires.")
-    print("break-even arb = arbitrage notional at which the avoided surcharge pays for")
-    print("                 the push. BELOW it the attack loses money.")
-    print(f"note: gaps above {GAP_THRESHOLD_TICKS + GUARD_MAX_DEV_TICKS - 1} ticks cannot be "
-          f"fully masked — the 49-tick budget is too small.")
+    print("-" * 82)
+    print("mask    = full: the gap never opens. partial: it opens on a smaller maxAbsGap.")
+    print("rate    = surcharge the arbitrageur would have paid, bps.")
+    print("avoided = bps actually saved by pushing. For partial masks this is capped at")
+    print(f"          {GUARD_MAX_DEV_TICKS - 1} * {CAPTURE_RATE_BPS} / 1e8 = "
+          f"{(GUARD_MAX_DEV_TICKS - 1) * CAPTURE_RATE_BPS / 1e4:.2f} bps, whatever the gap.")
+    print("break-even arb = notional at which the saving pays for the push.")
 
 
 def selftest():
