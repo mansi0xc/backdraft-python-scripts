@@ -1,0 +1,33 @@
+  !! VSCODE_PYTHON_AUTOACTIVATE_GUARD is set but this tool does not read it — check the spelling
+window 25598870_25606053: 14076 reference swaps
+honest |Δref|/block: p50=1.0 p90=4.0 p95=6.0 p99=10.0 p99.9=19.0 max=44
+suggested B = ceil(p99) = 10 ticks/block
+
+  target       B   eps  real  glitch  real_cap  glit_rej  phantom
+  v3_005       5    10     0      10         —    100.0%        0
+  v3_005      10    10     0      10         —     94.6%        2
+  v3_005      20    10     0      10         —     83.0%        8
+  v3_005      30    10     0      10         —     72.5%        9
+  v3_005      50    10     0      10         —     58.0%       11
+  v3_005     100    10     0      10         —     35.5%        8
+  v3_005     raw    10     0      10         —      0.0%        0
+  v3_030       5     1     0       1         —      0.0%        0
+  v3_030      10     1     0       1         —      0.0%        0
+  v3_030      20     1     0       1         —      0.0%        0
+  v3_030      30     1     0       1         —      0.0%        0
+  v3_030      50     1     0       1         —      0.0%        0
+  v3_030     100     1     0       1         —      0.0%        0
+  v3_030     raw     1     0       1         —      0.0%        0
+  v3_100       5     1     1       0    100.0%         —        0
+  v3_100      10     1     1       0    100.0%         —        0
+  v3_100      20     1     1       0    100.0%         —        0
+  v3_100      30     1     1       0    100.0%         —        0
+  v3_100      50     1     1       0    100.0%         —        0
+  v3_100     100     1     1       0    100.0%         —        0
+  v3_100     raw     1     1       0    100.0%         —        0
+
+v3_005: 10 eps (0 real / 10 glitch), real capture —, glitch rejection 94.6%, 2 phantom swaps -> no real episodes — every hook-visible gap was a reference glitch
+v3_030: 1 eps (0 real / 1 glitch), real capture —, glitch rejection 0.0%, 0 phantom swaps -> no real episodes — every hook-visible gap was a reference glitch
+v3_100: 1 eps (1 real / 0 glitch), real capture 100.0%, glitch rejection —, 0 phantom swaps -> REAL capture survives truncation
+
+caveat: one pair, one window, stand-in pools — treat as the first point, not the answer. Re-run on the calm window and at least one other volatile window before the appendix ships.
