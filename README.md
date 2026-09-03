@@ -4,6 +4,24 @@ How wrong is each on-chain price reference, in basis points against Binance, and
 
 Every arbitrage-capture hook needs a reference price, and every one that exists reaches off-chain to get it — Pyth, Chainlink, L1SLOAD, a second pool. Nobody has published what the on-chain options actually cost you in accuracy. This measures it.
 
+This is the measurement half of **Backdraft**, a Uniswap v4 hook that captures the value
+of a price gap and returns it to the traders who created it and the LPs who funded it:
+**https://github.com/mansi0xc/backdraft** (UHI10 · HK-UHI10-1088).
+
+Every design parameter in that hook came from a number produced here:
+
+| Hook parameter | Value | Where it comes from |
+|---|---|---|
+| reference source | v3 0.01% spot | `out/source_ablation_*.csv` — best single source at 3.48 bps mean error despite 10% liquidity share |
+| no multi-pool blend | — | same table: every combination containing v3_005 returns identical error, because a weighted median returns whichever source holds >50% of the weight |
+| gap threshold | 65 ticks | `out/error_table_*.md` — above the 57.97 bps worst case of the guarded reference |
+| divergence priced, not frozen | — | same table: the guard costs 10.06% of blocks frozen, and a freeze is an off-switch an attacker can reach cheaply |
+| truncation bound B | 13–16 ticks/block | `out/truncation_table_*.md` — p99 of honest per-block reference movement, regime-dependent |
+| `own_pool_ema` rejected | — | 58.23 bps mean vs 3.48 for an external source: a pool cannot detect its own staleness from its own history |
+
+`truncation_capture.py` and `manipulation_cost.py` back appendix §10 of the hook repo.
+
+
 ## Run it
 
 ```bash

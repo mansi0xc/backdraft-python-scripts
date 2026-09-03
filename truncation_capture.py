@@ -632,10 +632,10 @@ def main():
         return
     for t, r in at_b.items():
         if r["episodes"] == 0:
-            print(f"{t}: zero hook-visible dislocations in a volatile window — "
-                  f"at threshold 65 the mechanism never fires on this flow "
-                  f"regime at all. That is itself a finding about where "
-                  f"Backdraft's revenue lives.")
+            print(f"{t}: zero hook-visible dislocations in this window — "
+                  f"at threshold {GAP_THRESHOLD_TICKS} the mechanism never fires "
+                  f"on this flow regime at all. That is itself a finding about "
+                  f"where Backdraft's revenue lives.")
             continue
         v, g = r["real_captured_pct"], r["glitch_rejected_pct"]
         if pd.isna(v):
@@ -650,9 +650,14 @@ def main():
               f"{r['glitch_eps']} glitch), real capture {fmt_pct(v)}, "
               f"glitch rejection {fmt_pct(g)}, "
               f"{r['phantom_events']} phantom swaps -> {tag_}")
-    print("\ncaveat: one pair, one window, stand-in pools — treat as the first "
-          "point, not the answer. Re-run on the calm window and at least one "
-          "other volatile window before the appendix ships.")
+    print("\ncaveat: one pair, one window, stand-in pools. Windows measured so far "
+          "(ETH/USDC): 25821306-25828484 volatile, 25527155-25534325 calm, "
+          "25598870-25606053 volatile. Across those three the glitch-rejection "
+          "result replicated (100% / 97.2% / 94.6% at the suggested B, decaying "
+          "monotonically to 0% for the raw reference), but only 2 REAL episodes "
+          "appeared in total — so real-capture percentages here are under-powered "
+          "and must not be quoted without their n. A second token pair is the "
+          "outstanding gap before the appendix ships.")
 
 
 if __name__ == "__main__":

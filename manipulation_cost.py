@@ -154,12 +154,28 @@ def prize_rate(gap_ticks: int, ticks_pushed: int) -> float:
     return max(0.0, rate_at_gap(gap_ticks) - rate_at_gap(apparent))
 
 
-def analyse(liquidity, tick, gap_ticks, gas_price_gwei):
+# The hook no longer freezes on divergence — it PRICES it (DivergenceMath). That removes
+# the cliff this model was built around. Set GRADUATED=False to reproduce the old
+# boolean-guard numbers.
+GRADUATED = True
+
+
+def analyse(liquidity, tick, gap_ticks, gas_price_gwei, graduated=None):
     eth_price = eth_price_from_tick(tick)
     need = ticks_needed_to_mask(gap_ticks)
 
-    feasible = need <= GUARD_MAX_DEV_TICKS - 1
-    push = min(need, GUARD_MAX_DEV_TICKS - 1)
+    if GRADUATED if graduated is None else graduated:
+        # No cliff. Pushing past guardMaxDevTicks raises divTicks, which raises the
+        # surcharge MULTIPLIER — but a full mask means no gap opens, so there is no
+        # surcharge for the multiplier to multiply. The deterrent does not bind on the
+        # one attack it most needs to deter, and the push is limited only by its cost.
+        # (freezeMaxDevTicks does not help either: crossing it withholds the reference,
+        # which also prevents the gap from opening. Both outcomes are a successful mask.)
+        feasible = True
+        push = need
+    else:
+        feasible = need <= GUARD_MAX_DEV_TICKS - 1
+        push = min(need, GUARD_MAX_DEV_TICKS - 1)
 
     cost = attack_cost_usd(liquidity, tick, push, gas_price_gwei, eth_price)
 
