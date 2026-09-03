@@ -1,0 +1,63 @@
+
+target=data/swaps_v3_005_25527155_25534325.csv
+swaps analysed: 4,619
+
+bucket                                                   swaps   swap %   value %
+---------------------------------------------------------------------------------
+|gap| <= 65  (invisible by construction)                 4,606   99.72%    34.80%
+|gap| >  65, guard unfrozen  (CAPTURABLE)                    1    0.02%    51.04%
+|gap| >  65, guard frozen     (visible, switched off)        12    0.26%    14.17%
+---------------------------------------------------------------------------------
+
+BOOLEAN-GUARD DESIGN (freeze on divergence)
+  capturable:                         51.04%
+  lost to the threshold blind spot:   34.80%
+  lost to guard freezing:             14.17%
+
+SHIPPED DESIGN (divergence priced, never withheld)
+  capturable at 1.00x:                51.04%
+  capturable at a raised multiplier:  14.17%
+  CAPTURABLE IN TOTAL:                65.20%
+  lost to the threshold blind spot:   34.80%
+
+target=data/swaps_v3_030_25527155_25534325.csv
+swaps analysed: 431
+
+bucket                                                   swaps   swap %   value %
+---------------------------------------------------------------------------------
+|gap| <= 65  (invisible by construction)                   431  100.00%   100.00%
+|gap| >  65, guard unfrozen  (CAPTURABLE)                    0    0.00%     0.00%
+|gap| >  65, guard frozen     (visible, switched off)         0    0.00%     0.00%
+---------------------------------------------------------------------------------
+
+BOOLEAN-GUARD DESIGN (freeze on divergence)
+  capturable:                          0.00%
+  lost to the threshold blind spot:  100.00%
+  lost to guard freezing:              0.00%
+
+SHIPPED DESIGN (divergence priced, never withheld)
+  capturable at 1.00x:                 0.00%
+  capturable at a raised multiplier:   0.00%
+  CAPTURABLE IN TOTAL:                 0.00%
+  lost to the threshold blind spot:  100.00%
+
+target=data/swaps_v3_100_25527155_25534325.csv
+swaps analysed: 48
+
+bucket                                                   swaps   swap %   value %
+---------------------------------------------------------------------------------
+|gap| <= 65  (invisible by construction)                     2    4.17%     0.03%
+|gap| >  65, guard unfrozen  (CAPTURABLE)                   21   43.75%    25.45%
+|gap| >  65, guard frozen     (visible, switched off)        25   52.08%    74.52%
+---------------------------------------------------------------------------------
+
+BOOLEAN-GUARD DESIGN (freeze on divergence)
+  capturable:                         25.45%
+  lost to the threshold blind spot:    0.03%
+  lost to guard freezing:             74.52%
+
+SHIPPED DESIGN (divergence priced, never withheld)
+  capturable at 1.00x:                25.45%
+  capturable at a raised multiplier:  74.52%
+  CAPTURABLE IN TOTAL:                99.97%
+  lost to the threshold blind spot:    0.03%
