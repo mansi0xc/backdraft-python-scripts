@@ -228,6 +228,41 @@ def main():
     methods["composite_median_guarded"] = guarded
     freeze_rate = float(np.mean(frozen))
 
+    # ---- the shipped path -------------------------------------------------
+    # The rows above score CANDIDATE designs. These two score what the contract
+    # actually does: SplitV3Reference reads the fast pool's spot tick (v3 0.01%,
+    # most-traded, freshest), and computes divergence exactly as the contract does --
+    # the worse of (deep spot vs its own TWAP) and (fast spot vs deep spot).
+    #
+    #   shipped_fast_spot_raw    divergence is PRICED, the reference is never withheld,
+    #                            so coverage is 100%. This is what ships.
+    #   shipped_fast_spot_frozen the same reference under the OLD boolean guard, which
+    #                            withheld it above GUARD_MAX_DEV_TICKS. Kept so the
+    #                            accuracy-vs-coverage tradeoff of that change is visible
+    #                            rather than asserted.
+    FAST_LABEL, DEEP_LABEL = "v3_001", "v3_005"
+    if f"tick_{FAST_LABEL}" in frame and f"tick_{DEEP_LABEL}" in frame:
+        fast_tick = frame[f"tick_{FAST_LABEL}"].to_numpy()
+        deep_tick = frame[f"tick_{DEEP_LABEL}"].to_numpy()
+        deep_twap = time_weighted_average(ts, deep_tick, max(C.TWAP_WINDOWS))
+
+        methods["shipped_fast_spot_raw"] = fast_tick
+
+        div = np.maximum(np.abs(deep_tick - deep_twap), np.abs(fast_tick - deep_tick))
+        shipped_frozen = fast_tick.copy()
+        shipped_frozen[div > C.GUARD_MAX_DEV_TICKS] = np.nan
+        methods["shipped_fast_spot_frozen"] = shipped_frozen
+
+        div_valid = div[~np.isnan(div)]
+        if len(div_valid):
+            print(f"\nshipped divergence signal (max of deep-vs-TWAP, fast-vs-deep):")
+            print(f"  mean {div_valid.mean():.2f}  p95 {np.percentile(div_valid, 95):.2f}"
+                  f"  p99 {np.percentile(div_valid, 99):.2f}  max {div_valid.max():.2f} ticks")
+            print(f"  share of blocks above the {C.GUARD_MAX_DEV_TICKS}-tick tolerance: "
+                  f"{100 * np.mean(div_valid > C.GUARD_MAX_DEV_TICKS):.2f}%")
+    else:
+        print(f"[warn] {FAST_LABEL}/{DEEP_LABEL} not both present; shipped rows skipped")
+
     # ---- score every method
     cex_tick = frame["cex_tick"].to_numpy()
     results = []

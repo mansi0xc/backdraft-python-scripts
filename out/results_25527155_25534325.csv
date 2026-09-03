@@ -1,0 +1,12 @@
+method,mean_err_bps,median_err_bps,p95_err_bps,max_err_bps,lag_blocks,coverage_pct
+shipped_fast_spot_frozen,3.8,2.38,11.53,112.14,5,96.1
+shipped_fast_spot_raw,4.15,2.47,13.13,112.14,4,100.0
+composite_median_guarded,4.56,3.35,12.18,108.14,5,96.1
+spot_v3_005,4.89,3.46,14.29,108.14,4,100.0
+composite_median,4.89,3.46,14.29,108.14,4,100.0
+composite_mean,5.4,3.94,14.85,106.53,4,100.0
+twap_300s_v3_005,7.89,5.38,22.2,94.82,17,100.0
+twap_1800s_v3_005,16.15,10.46,44.32,168.25,25,100.0
+own_pool_ema,52.56,47.57,107.36,212.34,19,100.0
+own_pool_ema_flow0.3,61.96,50.77,165.29,310.55,10,100.0
+own_pool_ema_flow0.1,84.71,60.29,265.98,411.4,15,100.0

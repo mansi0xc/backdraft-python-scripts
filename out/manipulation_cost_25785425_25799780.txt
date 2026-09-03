@@ -1,0 +1,45 @@
+loaded 46,344 swap events from 1 file(s)
+
+==============================================================================
+p10 liquidity — the attacker's best moment
+  in-range liquidity L = 597,548,026,086,076,288
+  tick = 199,119   ETH ≈ $2,253.22
+  gas = 10.0 gwei
+==============================================================================
+  gap  push   mask   push notional      COST    rate  avoided   break-even arb
+----------------------------------------------------------------------------------
+   66     2   full $         2,836 $       7   3.30    3.30 $         22,203
+   80    16   full $        22,700 $      11   4.00    4.00 $         28,249
+  100    36   full $        51,099 $      17   5.00    5.00 $         33,959
+  114    50   full $        70,996 $      21   5.70    5.70 $         36,770
+  150    86   full $       122,224 $      31   7.50    7.50 $         41,606
+  200   136   full $       193,526 $      45  10.00   10.00 $         45,465
+  400   336   full $       480,524 $     103  20.00   20.00 $         51,432
+----------------------------------------------------------------------------------
+mask    = full: the gap never opens. partial: it opens on a smaller maxAbsGap.
+rate    = surcharge the arbitrageur would have paid, bps.
+avoided = bps actually saved by pushing. For partial masks this is capped at
+          49 * 500 / 1e8 = 2.45 bps, whatever the gap.
+break-even arb = notional at which the saving pays for the push.
+
+==============================================================================
+median liquidity
+  in-range liquidity L = 759,312,853,439,282,944
+  tick = 199,119   ETH ≈ $2,253.22
+  gas = 10.0 gwei
+==============================================================================
+  gap  push   mask   push notional      COST    rate  avoided   break-even arb
+----------------------------------------------------------------------------------
+   66     2   full $         3,604 $       7   3.30    3.30 $         22,668
+   80    16   full $        28,845 $      13   4.00    4.00 $         31,321
+  100    36   full $        64,933 $      20   5.00    5.00 $         39,492
+  114    50   full $        90,216 $      25   5.70    5.70 $         43,514
+  150    86   full $       155,311 $      38   7.50    7.50 $         50,429
+  200   136   full $       245,916 $      56  10.00   10.00 $         55,943
+  400   336   full $       610,609 $     129  20.00   20.00 $         64,441
+----------------------------------------------------------------------------------
+mask    = full: the gap never opens. partial: it opens on a smaller maxAbsGap.
+rate    = surcharge the arbitrageur would have paid, bps.
+avoided = bps actually saved by pushing. For partial masks this is capped at
+          49 * 500 / 1e8 = 2.45 bps, whatever the gap.
+break-even arb = notional at which the saving pays for the push.

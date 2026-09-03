@@ -1,5 +1,7 @@
 | Method | Mean err (bps) | Median | p95 | Max | Lag (blocks) | Coverage |
 |---|---|---|---|---|---|---|
+| `shipped_fast_spot_frozen` | 2.69 | 1.68 | 8.55 | 70.97 | 19 | 89.9% |
+| `shipped_fast_spot_raw` | 3.48 | 1.81 | 11.25 | 228.65 | 0 | 100.0% |
 | `composite_median_guarded` | 3.5 | 3.03 | 8.15 | 57.97 | 19 | 89.9% |
 | `spot_v3_005` | 4.18 | 3.15 | 9.88 | 228.65 | 0 | 100.0% |
 | `composite_median` | 4.18 | 3.15 | 9.88 | 228.65 | 0 | 100.0% |
